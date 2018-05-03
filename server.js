@@ -14,10 +14,30 @@ var cheerio = require("cheerio");
 // Require all models
 var db = require("./models");
 
+
+// -----------------DB configuration with mongoose--------
+// ----------------- define local mongoose db-------------
+var databaseUri = "mongodb://localhost/headlines";
+//  ----------------end of local db definition
+
+if(process.env.MONGODB_URI) {
+//this exectues if this is being executed in your heroku app
+mongoose.connect(process.env.MONGODB_URI);
+
+} else {
+  //  this executes if this is being executed locally
+  mongoose.connect(databaseUri)
+}
+
+//------------------------end DB configuration-----------------
+
 var PORT = 3000;
 
 // Initialize Express
 var app = express();
+
+// Connect to the Mongo DB
+mongoose.connect("mongodb://localhost/headlines");
 
 
 // Start the server
@@ -35,8 +55,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Use express.static to serve the public folder as a static directory
 app.use(express.static("public"));
 
-// Connect to the Mongo DB
-mongoose.connect("mongodb://localhost/headlines");
 
 //-------------------------------------------
 // Routes
