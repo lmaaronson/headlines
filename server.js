@@ -29,9 +29,18 @@ mongoose.connect(process.env.MONGODB_URI);
   mongoose.connect(databaseUri)
 }
 
+var db=mongoose.connection;
+
+db.on('error', function(err) {
+  console.log('Mongoose Error:', err);
+});
+
+db.once('open', function() {
+  console.log('Mongoose connect success.');
+});
 //------------------------end DB configuration-----------------
 
-var PORT = 3000;
+var PORT = process.env.PORT || 8080;
 
 // Initialize Express
 var app = express();
@@ -71,28 +80,40 @@ app.get("/scrape", function (req, res) {
 // console.log('loaded html');
   $(".postArticle").each(function(i, elements) {
     var link = $(this).children().children('a').attr('href');
-    console.log('link', link);
+    //console.log('link', link);
 
     var title = $(this).children().find('h3').text();
-    console.log('title', title);
+    //console.log('title', title);
 
     if (title && link) {
-      db.Article.create({
-        title: title,
-        link: link,
-        saved: false,
-        // saved: false is not needed since its default
-      },
-    function(err, inserted) {
-      if (err) {
-        console.log(err);
-      }
-      else {
-        console.log('inserted');
-      }
-    });
-  }
-});
+      // check if the article aready exists
+      db.Article.count({link: link}, function (err, count) {
+        //console.log("count", count);
+        if (count > 0) {
+          //console.log("article already exists!");
+        } else {
+          //console.log("creating a new article");
+          db.Article.create({
+            title: title,
+            link: link,
+            saved: false,
+            // saved: false is not needed since its default
+          },
+          function(err, inserted) {
+            if (err) {
+              console.log(err);
+            }
+            else {
+              //console.log("inserted");
+            }
+          }); 
+        }
+      }); 
+
+
+      
+    }
+  });
 });
   res.send("Scrape Complete")
 });
@@ -102,8 +123,22 @@ app.get("/scrape", function (req, res) {
 // AFTER THE SCRAPE THE SERVER CB FOR THE ARTICLES IN THE DB
 // Route for getting all Articles from the db
 app.get("/articles", function(req, res) {
-  // Grab every document in the Articles collection
-  db.Article.find({})
+  // /articles?saved=true
+  console.log("req.query", req.query);
+  if (req.query.saved === 'true') {
+    // Grab every document in the Articles collection
+    db.Article.find({ saved: true })
+     .then(function(dbArticle) {
+      // If we were able to successfully find Articles, send them back to the client
+      res.json(dbArticle);
+    })
+   .catch(function(err) {
+      // If an error occurred, send it to the client
+      res.json(err);
+    });
+  } else {
+   // Grab every document in the Articles collection
+    db.Article.find({ saved: false})
     .then(function(dbArticle) {
       // If we were able to successfully find Articles, send them back to the client
       res.json(dbArticle);
@@ -112,6 +147,10 @@ app.get("/articles", function(req, res) {
       // If an error occurred, send it to the client
       res.json(err);
     });
+  }
+
+
+
 });
 
 // --------------------------------------------------------------
@@ -130,14 +169,12 @@ app.get("/", function(req, res) {   // grab all articles in the collection where
 
   // Route for saved or not saved articles  
 // we are in the server so we can talk to the route
-app.put("/articles/:id", function (req, res) {
-  console.log(req.params.id)
+app.post("/articles/:id", function (req, res) {
+  console.log(req.params.id);
 
   // id req.params.id is the conditions           function (err, article) is the callback   
   Article.findOneAndUpdate({"_id": req.params.id}, 
-  {$set:{saved: true}}, function(err, res){
-
-
+  {$set:{saved: true}}, function(err, res) {
 // // Save an article
 // app.post("/articles/save/:id", function(req, res) {
 //   // Use the article id to find and update its saved boolean
@@ -155,6 +192,6 @@ app.put("/articles/:id", function (req, res) {
 //   });
 // });
 
-  }) 
+  });
 })
 

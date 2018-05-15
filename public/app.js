@@ -1,25 +1,36 @@
 //  scrape articles as document loads
-$(document).on("click", "#scrape", function() {
-  console.log ("button clicked")
+$(document).on("click", "#scrape", function () {
+  console.log("button clicked")
 
 
 
   // Now make an ajax call for the scrape of articles
   $.ajax({
-    method: "GET",
-    url: "/scrape" 
-  })
-    .then(function(result) {
+      method: "GET",
+      url: "/scrape"
+    })
+    .then(function (result) {
       // location.reload()
+      $.getJSON("/articles", function (data) {
+        // For each one
+        $("#articles").empty();
+        for (var i = 0; i < data.length; i++) {
+          // Display the apropos information on the page
+          $("#articles").append(`
+            <p data-id="${data[i]._id}">
+              <a href="${data[i].link}" target="_blank">${data[i].title}</a>
+              <button class="save-article">Save Article</button></p>`);
+        }
+      });
       console.log('result', result);
     });
-  });
+});
 
 
 // WHAT IF WE STUCK 22-32 ON LINE 13 SO IT WOULD FIRE OFF ONLY AFTER THE SCRAPE
 // BUTTON IS CLICKED?!?!?!!
 // Grab the articles as a json files to be displayed in the <div> on index.html
-$.getJSON("/articles", function(data) {
+/*$.getJSON("/articles", function(data) {
   // For each one
   for (var i = 0; i < data.length; i++) {
     // Display the apropos information on the page
@@ -29,7 +40,7 @@ $.getJSON("/articles", function(data) {
         <button class="save-article">Save Article</button></p>`
       );
   }
-});
+});*/
 
 // TODO:
 // To display the saved articles:
@@ -44,30 +55,64 @@ $.getJSON("/articles", function(data) {
 // Inside the new route, clear out the $("#articles") div.
 // Use a loop like you have up there on line 23 to HTML-ify and append
 //  to $("#articles") all of the saved articles.
+$(document).on("click", "#saved", function () {
+  console.log("saved button clicked");
+
+  // Now make an ajax call for the scrape of articles
+  $.getJSON("/articles?saved=true", function (data) {
+    // For each one
+    $("#articles").empty();
+    for (var i = 0; i < data.length; i++) {
+      // Display the apropos information on the page
+      $("#articles").append(`
+        <p data-id="${data[i]._id}">
+        <a href="${data[i].link}" target="_blank">${data[i].title}</a>
+        <button class="save-article">Save Article</button></p>
+      `);
+    }
+  });
+});
 
 
 
 // When you click the save article button
-$(document).on("click", ".save-article", function() {
-   // console.log($(this))
+$(document).on("click", ".save-article", function () {
+  // console.log($(this))
   // console.log($(this).parent().children('a').attr('href'))
   // console.log($(this).parent().children('a').text())
   // const title = $(this).parent().children('a').text()
   // const link = $(this).parent().children('a').attr('href')
   // update this thing in my db with data-id to saved === true
   // console.log($(this).parent().attr('data-id'))
-  
+
   const savedID = $(this).parent().attr('data-id')
+  console.log('save article');
 
   $.ajax({
-    method: "PUT",
+    method: "POST",
     url: "/articles/" + savedID,
   })
+  .then(function(data) {
+    console.log('data', data);
+    console.log('after saving article');
+    $.getJSON("/articles", function (data) {
+      // For each one
+      $("#articles").empty();
+      console.log('putting articles on the page');
+      for (var i = 0; i < data.length; i++) {
+        // Display the apropos information on the page
+        $("#articles").append(`
+          <p data-id="${data[i]._id}">
+          <a href="${data[i].link}" target="_blank">${data[i].title}</a>
+          <button class="save-article">Save Article</button></p>
+        `);
+      }
+    });
+  });
 
   // Grab the id associated with the article from the submit button
   // var thisId = $(this).attr("data");
 });
-
 
 
 //   // Run a POST request to change the note, using what's entered in the inputs
