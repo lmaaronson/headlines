@@ -29,13 +29,13 @@ mongoose.connect(process.env.MONGODB_URI);
   mongoose.connect(databaseUri)
 }
 
-var db=mongoose.connection;
+ var datab=mongoose.connection;
 
-db.on('error', function(err) {
+datab.on('error', function(err) {
   console.log('Mongoose Error:', err);
 });
 
-db.once('open', function() {
+datab.once('open', function() {
   console.log('Mongoose connect success.');
 });
 //------------------------end DB configuration-----------------
@@ -72,13 +72,13 @@ app.get("/scrape", function (req, res) {
   request("https://medium.freecodecamp.org/", function (error, response, html){
   var $ = cheerio.load(html);
 
-
 // HERE THE SCRAPE HAPPENS
 // using inspect find a class or id that appears in what you want to 
 // scrape and put that into the .each function
 // then define what you are scraping
 // console.log('loaded html');
   $(".postArticle").each(function(i, elements) {
+   
     var link = $(this).children().children('a').attr('href');
     //console.log('link', link);
 
@@ -123,6 +123,7 @@ app.get("/scrape", function (req, res) {
 // AFTER THE SCRAPE THE SERVER CB FOR THE ARTICLES IN THE DB
 // Route for getting all Articles from the db
 app.get("/articles", function(req, res) {
+  console.log(db)
   // /articles?saved=true
   console.log("req.query", req.query);
   if (req.query.saved === 'true') {
